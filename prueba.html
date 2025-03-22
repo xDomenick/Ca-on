@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación de Cañón</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        h1 {
+            color: #00796b;
+            margin-bottom: 20px;
+        }
+        .left-content {
+            max-width: 350px;
+        }
+        canvas {
+            border: 2px solid #000;
+            display: block;
+            margin: 20px auto;
+            background-color: #e0f7fa;
+            width: 600px; /* Tamaño reducido */
+            height: 300px; /* Tamaño reducido */
+        }
+        input {
+            margin: 10px;
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #00796b;
+            width: 100%;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #00796b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #004d40;
+        }
+        label {
+            font-size: 16px;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #00796b;
+        }
+    </style>
+</head>
+<body>
+    <div class="left-content">
+        <h1>Ingresa tus datos</h1>
+        <label for="angle">Ángulo (grados):</label>
+        <input type="number" id="angle" placeholder="Ángulo en grados" min="0" max="90">
+        <br>
+        <label for="velocity">Velocidad (m/s):</label>
+        <input type="number" id="velocity" placeholder="Velocidad en m/s" min="1">
+        <br>
+        <button onclick="calcularTrajectoria()">Calcular</button>
+        
+        <!-- Resultados -->
+        <div class="result">
+            <p id="distanceResult">Distancia de impacto: -</p>
+            <p id="timeResult">Tiempo en el aire: -</p>
+        </div>
+    </div>
+    
+    <!-- Gráfica -->
+    <div>
+        <h2>Gráfica de la Trayectoria</h2>
+        <canvas id="trajectoria"></canvas>
+    </div>
+
+    <script>
+        let canvas, ctx;
+        let angle, velocity, angleRad, g = 9.81;
+        let timeOfFlight, distance;
+        let projectile = {x: 20, y: 260, vx: 0, vy: 0}; // Coordenadas y velocidades iniciales
+        let time = 0;
+        let interval;
+
+        function calcularTrajectoria() {
+            angle = parseFloat(document.getElementById('angle').value);
+            velocity = parseFloat(document.getElementById('velocity').value);
+
+            if (isNaN(angle) || isNaN(velocity)) {
+                alert("Por favor ingresa un ángulo y una velocidad válidos.");
+                return;
+            }
+
+            // Convertir el ángulo a radianes
+            angleRad = angle * Math.PI / 180;
+
+            // Calcular el tiempo de vuelo
+            timeOfFlight = (2 * velocity * Math.sin(angleRad)) / g;
+
+            // Calcular la distancia
+            distance = (velocity * Math.cos(angleRad)) * timeOfFlight;
+
+            // Mostrar los resultados en la página
+            document.getElementById('distanceResult').innerHTML = "Distancia de impacto: " + distance.toFixed(2) + " metros.";
+            document.getElementById('timeResult').innerHTML = "Tiempo en el aire: " + timeOfFlight.toFixed(2) + " segundos.";
+
+            // Inicializar canvas
+            canvas = document.getElementById('trajectoria');
+            ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+
+            // Dibujo del cañón (ajustado más abajo y más pequeño)
+            ctx.fillStyle = "#004d40";
+            ctx.beginPath();
+            ctx.moveTo(10, canvas.height - 10); // Base del cañón (pegado al piso)
+            ctx.lineTo(10, canvas.height - 30); // Cañón cuerpo cuadrado
+            ctx.lineTo(30, canvas.height - 30); // Parte final del tubo cuadrado
+            ctx.lineTo(30, canvas.height - 10); // Cañón tubo
+            ctx.closePath();
+            ctx.fill();
+
+            // Dibujo del piso (suelo)
+            ctx.fillStyle = "#795548";
+            ctx.fillRect(0, canvas.height - 10, canvas.width, 10); // Línea horizontal que simula el suelo
+
+            // Inicializar el proyectil
+            projectile.x = 10;
+            projectile.y = canvas.height - 10;
+            projectile.vx = velocity * Math.cos(angleRad); // Componente horizontal de la velocidad
+            projectile.vy = -velocity * Math.sin(angleRad); // Componente vertical de la velocidad
+
+            // Iniciar la animación
+            time = 0;
+            interval = requestAnimationFrame(animarTrayectoria);
+        }
+
+        function animarTrayectoria() {
+            // Limpiar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujo del cañón (ajustado más abajo y más pequeño)
+            ctx.fillStyle = "#004d40";
+            ctx.beginPath();
+            ctx.moveTo(10, canvas.height - 10); // Base del cañón (pegado al piso)
+            ctx.lineTo(10, canvas.height - 30); // Cañón cuerpo cuadrado
+            ctx.lineTo(30, canvas.height - 30); // Parte final del tubo cuadrado
+            ctx.lineTo(30, canvas.height - 10); // Cañón tubo
+            ctx.closePath();
+            ctx.fill();
+
+            // Dibujo del piso (suelo)
+            ctx.fillStyle = "#795548";
+            ctx.fillRect(0, canvas.height - 10, canvas.width, 10); // Línea horizontal que simula el suelo
+
+            // Actualizar la posición del proyectil
+            projectile.x += projectile.vx * 0.05; // Movimiento horizontal
+            projectile.y += projectile.vy * 0.05; // Movimiento vertical
+            projectile.vy += g * 0.05; // Aceleración de la gravedad
+
+            // Dibujar el proyectil (bola de cañón más pequeña)
+            ctx.beginPath();
+            ctx.arc(projectile.x, projectile.y, 4, 0, Math.PI * 2); // Bola de cañón más pequeña
+            ctx.fillStyle = "#d32f2f"; // Color de la bola
+            ctx.fill();
+            ctx.closePath();
+
+            // Detener la animación cuando el proyectil llegue al suelo
+            if (projectile.y > canvas.height - 10) {
+                // Dibujar el punto de impacto
+                ctx.beginPath();
+                ctx.arc(projectile.x, canvas.height - 10, 5, 0, Math.PI * 2);
+                ctx.fillStyle = "#1b5e20"; // Color del punto de impacto
+                ctx.fill();
+                ctx.closePath();
+
+                cancelAnimationFrame(interval);
+                return;
+            }
+
+            // Continuar la animación
+            interval = requestAnimationFrame(animarTrayectoria);
+        }
+    </script>
+</body>
+</html>
